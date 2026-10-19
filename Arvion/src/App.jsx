@@ -1,471 +1,180 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import brandingLogo from '../arvion-logo/arvion-logo.jpeg'
+import { supabase } from './lib/supabase'
 import './App.css'
-import { isSupabaseConfigured, supabase } from './lib/supabase'
-import { ForgotPasswordPage, LoginPage, ResetPasswordPage, SignupPage, WelcomePage } from './pages/AuthPages'
 
-const MarketPage = lazy(() => import('./pages/MarketPages').then((module) => ({ default: module.MarketPage })))
-const MarketListingDetailPage = lazy(() => import('./pages/MarketPages').then((module) => ({ default: module.MarketListingDetailPage })))
-const CreateMarketListingPage = lazy(() => import('./pages/MarketPages').then((module) => ({ default: module.CreateMarketListingPage })))
-const LocalPage = lazy(() => import('./pages/LocalPages').then((module) => ({ default: module.LocalPage })))
-const LocalServiceDetailPage = lazy(() => import('./pages/LocalPages').then((module) => ({ default: module.LocalServiceDetailPage })))
-const CreateLocalServicePage = lazy(() => import('./pages/LocalPages').then((module) => ({ default: module.CreateLocalServicePage })))
+import * as MarketModule from './pages/MarketPages'
+import * as JobsModule from './pages/JobsPages'
+import * as StoresModule from './pages/StoresPages'
+import * as AuthModule from './pages/AuthPages'
+import * as AdminModule from './pages/AdminVerificationsPage'
 
-const navItems = ['Home', 'Market', 'Local', 'About']
-
-const promptExamples = [
-  'Find me a reliable plumber in Lekki',
-  'I need a PS5 under ₦500,000',
-  'Find a house in Abuja under ₦2m yearly',
-  'I need someone to build my website',
-  'Find a mechanic near me',
-  'I want to sell my iPhone',
-  'Find a tutor for my daughter',
-  'I need a photographer this Saturday',
-]
-
-const capabilities = [
-  {
-    title: 'Market',
-    description: 'Buy and discover products from people and businesses around you.',
-  },
-  {
-    title: 'Local',
-    description: 'Find trusted professionals and services for everyday needs.',
-  },
-  {
-    title: 'Arvion AI',
-    description: 'Tell Arvion what you need and let it help you find the right solution.',
-  },
-  {
-    title: 'Wallet',
-    description: 'Manage money and payments through Arvion.',
-  },
-  {
-    title: 'Earn',
-    description: 'Discover ways to earn and participate in the Arvion ecosystem.',
-  },
-  {
-    title: 'More',
-    description: 'Homes, delivery, travel, learn and more can grow into the platform over time.',
-  },
-]
-
-const steps = [
-  {
-    number: '01',
-    title: 'Tell Arvion',
-    description: 'Describe what you need naturally, in your own words.',
-  },
-  {
-    number: '02',
-    title: 'Arvion Finds Options',
-    description: 'Arvion helps you discover relevant products, services or solutions.',
-  },
-  {
-    number: '03',
-    title: 'Get It Done',
-    description: 'Choose an option and take action with confidence.',
-  },
-]
-
-const marketItems = ['Phones', 'Laptops', 'Furniture', 'Fashion', 'Electronics', 'Cars']
-const localItems = ['Plumbers', 'Electricians', 'Mechanics', 'Cleaners', 'Barbers', 'Tutors', 'Photographers', 'Web developers']
-
-const footerLinks = ['Market', 'Local', 'Arvion AI', 'About', 'Security', 'Contact', 'Privacy', 'Terms']
-
-function Brand({ className = '' }) {
-  return (
-    <Link to="/" className={`brand ${className}`.trim()} aria-label="Arvion home">
-      <img src={brandingLogo} alt="Arvion logo" className="brand-mark brand-logo" />
-      <span className="brand-text">Arvion</span>
-    </Link>
-  )
+function GetComp(mod, names) {
+  if(!mod) return null
+  return names.map(n => mod[n]).find(Boolean) || mod.default || null
 }
 
-function ProtectedRoute({ authReady, authError, session, children }) {
-  if (!authReady) {
-    return <div className="auth-shell" role="status">Checking your session...</div>
-  }
-
-  if (authError) {
-    return <div className="auth-shell" role="alert">{authError}</div>
-  }
-
-  if (!isSupabaseConfigured() || !session) {
-    return <Navigate to="/login" replace />
-  }
-
-  return children
+// PROFESSIONAL ICONS - SVG, not emoji
+const Icons = {
+  search: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>,
+  market: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 7h12l-1 11H7L6 7z"/><path d="M9 7V5a3 3 0 016 0v2"/></svg>,
+  jobs: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M8 7V5a4 4 0 018 0v2"/></svg>,
+  stores: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z"/><path d="M9 21V12h6v9"/></svg>,
+  messages: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 0121 11.5z"/></svg>,
+  ai: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4L12 2z"/><path d="M19 3v3M20.5 4.5H17.5"/><path d="M5 17v2M6 18H4"/></svg>,
+  sell: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
 }
 
-function HomePage({ menuOpen, setMenuOpen }) {
-  return (
-    <div className="page-shell">
-      <header className="topbar">
-        <div className="container nav-wrap">
-          <Brand />
+function HomePage() {
+  const [session, setSession] = useState(null)
+  const [aiInput, setAiInput] = useState('')
+  const navigate = useNavigate()
 
-          <nav className={`nav ${menuOpen ? 'open' : ''}`} aria-label="Main navigation">
-            {navItems.map((item) => (
-              <Link key={item} to={item === 'Home' ? '/' : item === 'Market' ? '/market' : item === 'Local' ? '/local' : '#'} className="nav-link">
-                {item}
-              </Link>
-            ))}
+  useEffect(() => {
+    supabase.auth.getUser().then(({data})=>setSession(data))
+  }, [])
+
+  const getGreeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
+  const userName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'Akeem Ademabayoje'
+
+  const handleAI = (e) => {
+    e.preventDefault()
+    if(!aiInput.trim()) return
+    navigate(`/market?search=${encodeURIComponent(aiInput)}`)
+  }
+
+  const boxes = [
+    { title: 'Market', desc: 'Buy from verified sellers. Phones, electronics, fashion, vehicles and more with escrow.', Icon: Icons.market, link: '/market', color: '#eef2ff' },
+    { title: 'Jobs', desc: 'Hire trusted professionals or offer your service. Plumbers, tutors, developers nearby.', Icon: Icons.jobs, link: '/jobs', color: '#f0fdf4' },
+    { title: 'Stores', desc: 'Wholesale hubs and logistics. Phone villages, car dealers, bulk goods and rider fleets.', Icon: Icons.stores, link: '/stores', color: '#fffbeb' },
+    { title: 'Messages', desc: 'Secure conversations, offers, and delivery tracking. Real unread count, no spam.', Icon: Icons.messages, link: '/market/messages', color: '#faf5ff' },
+    { title: 'Arvion AI', desc: 'Describe what you need in plain English. AI finds matching products and services.', Icon: Icons.ai, link: '/market', color: '#eff6ff' },
+    { title: 'Sell & Earn', desc: 'List products, open a store, set up payouts and start earning on Arvion.', Icon: Icons.sell, link: '/market/new', color: '#fff7ed' },
+  ]
+
+  return (
+    <div style={{minHeight:'100vh', background:'#fbfcfe'}}>
+      <header style={{background:'#fff', borderBottom:'1px solid #eef0f3', position:'sticky', top:0, zIndex:20}}>
+        <div style={{maxWidth:'1200px', margin:'0 auto', padding:'14px 24px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <Link to="/" style={{display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', color:'#0f172a', fontWeight:'900', fontSize:'18px'}}>
+            <img src={brandingLogo} alt="" style={{width:'32px', height:'32px', borderRadius:'8px', objectFit:'cover'}}/>
+            Arvion
+          </Link>
+          <nav style={{display:'flex', gap:'28px', fontSize:'14px', fontWeight:'600'}}>
+            <Link to="/" style={{color:'#0f172a', textDecoration:'none', borderBottom:'2px solid #0f172a', paddingBottom:'4px'}}>Home</Link>
+            <Link to="/market" style={{color:'#64748b', textDecoration:'none'}}>Market</Link>
+            <Link to="/jobs" style={{color:'#64748b', textDecoration:'none'}}>Jobs</Link>
+            <Link to="/stores" style={{color:'#64748b', textDecoration:'none'}}>Stores</Link>
+            <Link to="/market/messages" style={{color:'#64748b', textDecoration:'none'}}>Messages</Link>
           </nav>
-
-          <div className="nav-actions">
-            <Link to="/login" className="nav-ghost">
-              Log In
-            </Link>
-            <Link to="/signup" className="nav-primary">
-              Get Started
-            </Link>
-          </div>
-
-          <button
-            type="button"
-            className="menu-toggle"
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {menuOpen ? '×' : '☰'}
-          </button>
+          <Link to="/market/new" style={{background:'#0f172a', color:'#fff', padding:'10px 18px', borderRadius:'999px', textDecoration:'none', fontSize:'13px', fontWeight:'700'}}>+ Sell on Arvion</Link>
         </div>
       </header>
 
-      <main className="page-content">
-        <section className="hero container">
-          <div className="hero-copy">
-            <span className="eyebrow">Built for trust. Designed for Africa.</span>
-            <h1>What do you need today? Tell Arvion.</h1>
-            <p className="hero-text">
-              From finding a trusted professional to discovering products, managing your money,
-              or getting everyday things done — Arvion brings it together.
-            </p>
+      <main style={{maxWidth:'1100px', margin:'0 auto', padding:'0 24px'}}>
+        <div style={{padding:'72px 0 32px 0'}}>
+          <span style={{fontSize:'11px', letterSpacing:'0.22em', fontWeight:'800', color:'#6366f1'}}>DISCOVER SOMETHING GOOD</span>
+          <h1 style={{fontSize:'56px', fontWeight:'900', lineHeight:'1.05', marginTop:'14px', letterSpacing:'-0.03em', color:'#0f172a'}}>
+            {getGreeting()},<br/>
+            <span style={{color:'#1e293b'}}>{userName}</span>
+          </h1>
+          <p style={{fontSize:'16px', color:'#64748b', marginTop:'16px', maxWidth:'500px', lineHeight:'1.5'}}>Buy what you need from people and businesses across Arvion. Tell us what you need today.</p>
+        </div>
 
-            <div className="hero-actions">
-              <Link to="/signup" className="primary-button large-btn">
-                Get Started
+        <form onSubmit={handleAI} style={{background:'#fff', border:'1px solid #e2e8f0', borderRadius:'20px', padding:'8px', display:'flex', gap:'8px', maxWidth:'720px', boxShadow:'0 8px 30px rgba(0,0,0,0.04)'}}>
+          <div style={{flex:1, display:'flex', alignItems:'center', gap:'12px', padding:'0 18px'}}>
+            <Icons.search/>
+            <input value={aiInput} onChange={e=>setAiInput(e.target.value)} placeholder="Search phones, laptops, furniture... Try 'iPhone 15 Pro' or 'office chair'" style={{flex:1, border:'none', outline:'none', fontSize:'15px', padding:'14px 0', background:'transparent'}}/>
+          </div>
+          <button type="submit" style={{background:'#0f172a', color:'#fff', border:'none', padding:'0 28px', borderRadius:'14px', fontWeight:'700', cursor:'pointer', letterSpacing:'0.01em'}}>Search</button>
+        </form>
+
+        <div style={{height:'100px'}}></div>
+
+        <div style={{paddingBottom:'80px'}}>
+          <div style={{marginBottom:'22px'}}>
+            <span style={{fontSize:'11px', letterSpacing:'0.18em', fontWeight:'800', color:'#94a3b8'}}>BROWSE ARVION</span>
+            <h2 style={{fontSize:'22px', fontWeight:'800', marginTop:'6px', color:'#0f172a'}}>Everything in one place</h2>
+          </div>
+
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:'18px'}}>
+            {boxes.map(b=>(
+              <Link key={b.title} to={b.link} style={{textDecoration:'none', background:'#fff', border:'1px solid #eef0f3', borderRadius:'20px', padding:'26px', display:'flex', flexDirection:'column', minHeight:'182px'}}>
+                <div style={{width:'44px', height:'44px', borderRadius:'12px', background:b.color, display:'flex', alignItems:'center', justifyContent:'center', color:'#0f172a', marginBottom:'16px'}}>
+                  <b.Icon/>
+                </div>
+                <h3 style={{fontSize:'16px', fontWeight:'800', color:'#0f172a', letterSpacing:'-0.01em'}}>{b.title}</h3>
+                <p style={{fontSize:'13.5px', color:'#64748b', marginTop:'8px', lineHeight:'1.5', flex:1}}>{b.desc}</p>
+                <div style={{display:'flex', alignItems:'center', gap:'6px', marginTop:'16px', fontSize:'13px', fontWeight:'700', color:'#0f172a'}}>
+                  Explore <span style={{fontSize:'14px'}}>→</span>
+                </div>
               </Link>
-              <button type="button" className="secondary-button large-btn">
-                Explore Arvion
-              </button>
-            </div>
-
-            <div className="ai-search" aria-label="Arvion search input">
-              <div className="search-icon">✦</div>
-              <input type="text" placeholder="What do you need today?" readOnly />
-              <button type="button" className="search-button">
-                Search
-              </button>
-            </div>
-
-            <div className="example-row" aria-label="Example prompts">
-              {promptExamples.slice(0, 4).map((example) => (
-                <span key={example} className="example-pill">
-                  {example}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="hero-visual" aria-hidden="true">
-            <div className="visual-panel main-card">
-              <div className="panel-topline">AI Match</div>
-              <h2>Trusted plumber</h2>
-              <p>Lekki • 3 nearby • ₦18,000 starting</p>
-            </div>
-
-            <div className="visual-panel floating-card top-card">
-              <span className="tiny-tag">Market</span>
-              <strong>Phones & gadgets</strong>
-              <small>From verified sellers</small>
-            </div>
-
-            <div className="visual-panel floating-card side-card">
-              <span className="tiny-tag">Local</span>
-              <strong>Experienced pros</strong>
-              <small>Fastest matches near you</small>
-            </div>
-
-            <div className="mini-metrics">
-              <div>
-                <strong>3x</strong>
-                <span>Faster discovery</span>
-              </div>
-              <div>
-                <strong>1 place</strong>
-                <span>For market & local</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="platform container">
-          <div className="section-heading">
-            <span className="section-kicker">One platform</span>
-            <h2>Everything people need, in one place.</h2>
-          </div>
-
-          <div className="capability-grid">
-            {capabilities.map((item) => (
-              <article key={item.title} className="capability-card">
-                <div className="card-badge">{item.title.slice(0, 1)}</div>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="steps container">
-          <div className="section-heading center-heading">
-            <span className="section-kicker">How Arvion works</span>
-            <h2>Simple steps. Smarter solutions.</h2>
-          </div>
-
-          <div className="step-grid">
-            {steps.map((step) => (
-              <article key={step.number} className="step-card">
-                <span className="step-number">{step.number}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="preview container">
-          <div className="section-heading center-heading">
-            <span className="section-kicker">Market + Local</span>
-            <h2>Two ways to get what you need.</h2>
-          </div>
-
-          <div className="preview-grid">
-            <article className="preview-panel market-panel">
-              <div className="panel-header">
-                <span className="mini-dot"></span>
-                <h3>Market</h3>
-              </div>
-              <p>Physical products people can discover from sellers and businesses.</p>
-              <div className="item-row">
-                {marketItems.map((item) => (
-                  <span key={item} className="item-chip">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </article>
-
-            <article className="preview-panel local-panel">
-              <div className="panel-header">
-                <span className="mini-dot accent-dot"></span>
-                <h3>Local</h3>
-              </div>
-              <p>Services and professionals people can hire for everyday tasks and projects.</p>
-              <div className="item-row">
-                {localItems.map((item) => (
-                  <span key={item} className="item-chip">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </article>
-          </div>
-
-          <div className="comparison-clarifier">
-            <div>
-              <strong>Market = things you buy</strong>
-            </div>
-            <div>
-              <strong>Local = people/services you hire</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="trust container">
-          <div className="trust-copy">
-            <span className="section-kicker">Trust & security</span>
-            <h2>Built for trust. Designed for Africa.</h2>
-            <p>
-              Arvion is being built with trust and security at the centre of the experience.
-              From secure accounts and identity verification to protected communication and safer
-              transactions, the platform is designed to help people feel confident when they
-              discover and act on opportunities.
-            </p>
-          </div>
-
-          <div className="trust-points">
-            <div className="point">Secure accounts</div>
-            <div className="point">Identity</div>
-            <div className="point">Protected communication</div>
-            <div className="point">Fraud awareness</div>
-            <div className="point">Verified providers</div>
-            <div className="point">Safer transactions</div>
-          </div>
-        </section>
-
-        <section className="final-cta container">
-          <div className="cta-box">
-            <span className="section-kicker">Start with one question</span>
-            <h2>Your next solution could start with one question.</h2>
-            <p>Tell Arvion what you need and discover what&apos;s possible.</p>
-            <div className="cta-actions">
-              <Link to="/signup" className="primary-button large-btn">
-                Get Started
-              </Link>
-              <Link to="/login" className="secondary-button large-btn">
-                Log In
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="site-footer">
-        <div className="container footer-grid">
-          <div>
-            <Brand className="footer-brand" />
-            <p className="footer-copy">
-              One place to discover products, services, and opportunities with confidence.
-            </p>
-          </div>
-
-          <div className="footer-links">
-            {footerLinks.map((link) => (
-              <a key={link} href="#" className="footer-link">
-                {link}
-              </a>
             ))}
           </div>
         </div>
-      </footer>
+      </main>
     </div>
   )
 }
 
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [session, setSession] = useState(null)
-  const [passwordRecovery, setPasswordRecovery] = useState(false)
-  const [authReady, setAuthReady] = useState(!supabase)
-  const [authError, setAuthError] = useState('')
-
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
-    if (!supabase) {
-      return
-    }
-
-    let isMounted = true
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (isMounted) {
-        setSession(nextSession)
-        setAuthError('')
-        if (event === 'PASSWORD_RECOVERY') {
-          setPasswordRecovery(true)
-        } else if (event === 'SIGNED_OUT') {
-          setPasswordRecovery(false)
-        }
-      }
-    })
-
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!isMounted) {
-        return
-      }
-
-      if (error) {
-        setAuthError('Unable to restore your session. Please reload the page and try again.')
-      } else {
-        setSession(data.session)
-      }
-      setAuthReady(true)
-    }).catch(() => {
-      if (isMounted) {
-        setAuthError('Unable to restore your session. Please reload the page and try again.')
-        setAuthReady(true)
-      }
-    })
-
-    return () => {
-      isMounted = false
-      listener.subscription.unsubscribe()
-    }
+    supabase.auth.getSession().then(({ data }) => setSession(data.session)).finally(()=> setLoading(false))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    return () => subscription.unsubscribe()
   }, [])
+  if (loading) return <p style={{padding:20}}>Loading...</p>
+
+  const MarketPage = GetComp(MarketModule, ['MarketPage','Market'])
+  const MarketDetail = GetComp(MarketModule, ['MarketListingDetailPage','ListingDetailPage'])
+  const CreateMarket = GetComp(MarketModule, ['CreateMarketListingPage','CreateListingPage'])
+  const MarketChat = GetComp(MarketModule, ['MarketChatPage','ChatPage'])
+  const MarketInbox = GetComp(MarketModule, ['MarketMessagesInboxPage','MessagesInboxPage'])
+  const JobsPage = GetComp(JobsModule, ['JobsPage','Jobs'])
+  const CreateJobService = GetComp(JobsModule, ['CreateJobServicePage','CreateServicePage'])
+  const CreateJobPost = GetComp(JobsModule, ['CreateJobPostPage','CreateJobPage'])
+  const JobServiceDetail = GetComp(JobsModule, ['JobServiceDetailPage','ServiceDetailPage'])
+  const JobDetail = GetComp(JobsModule, ['JobDetailPage'])
+  const StoresPage = GetComp(StoresModule, ['StoresPage','Stores'])
+  const StoreDetail = GetComp(StoresModule, ['StoreDetailPage'])
+  const CreateStore = GetComp(StoresModule, ['CreateStorePage'])
+  const CreateStoreProduct = GetComp(StoresModule, ['CreateStoreProductPage'])
+  const AuthPage = GetComp(AuthModule, ['LoginPage','SignupPage','AuthPages','default'])
+  const AdminPage = GetComp(AdminModule, ['AdminVerificationsPage','AdminVerificationPage','default'])
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="auth-shell" role="status">Loading Arvion Market...</div>}>
-        <Routes>
-          <Route path="/" element={<HomePage menuOpen={menuOpen} setMenuOpen={setMenuOpen} />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route
-            path="/reset-password"
-            element={
-              <ResetPasswordPage
-                recoveryActive={passwordRecovery}
-                onRecoveryComplete={() => setPasswordRecovery(false)}
-              />
-            }
-          />
-          <Route
-            path="/welcome"
-            element={
-              <ProtectedRoute authReady={authReady} authError={authError} session={session}>
-                <WelcomePage session={session} onLogout={() => setSession(null)} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market"
-            element={
-              <ProtectedRoute authReady={authReady} authError={authError} session={session}>
-                <MarketPage session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market/new"
-            element={
-              <ProtectedRoute authReady={authReady} authError={authError} session={session}>
-                <CreateMarketListingPage session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market/:listingId"
-            element={
-              <ProtectedRoute authReady={authReady} authError={authError} session={session}>
-                <MarketListingDetailPage session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/local"
-            element={<LocalPage />}
-          />
-          <Route
-            path="/local/new"
-            element={
-              <ProtectedRoute authReady={authReady} authError={authError} session={session}>
-                <CreateLocalServicePage session={session} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/local/:serviceId"
-            element={<LocalServiceDetailPage session={session} />}
-          />
-        </Routes>
-      </Suspense>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/market" element={MarketPage? <MarketPage /> : <div style={{padding:20}}>MarketPage missing</div>} />
+        <Route path="/market/new" element={CreateMarket? <CreateMarket session={session} /> : <Navigate to="/market" />} />
+        <Route path="/market/:listingId" element={MarketDetail? <MarketDetail /> : <div>Detail missing</div>} />
+        <Route path="/market/chat/:conversationId" element={MarketChat? <MarketChat /> : <div>Chat missing</div>} />
+        <Route path="/market/messages" element={MarketInbox? <MarketInbox /> : <div>Inbox missing</div>} />
+        <Route path="/jobs" element={JobsPage? <JobsPage session={session} /> : <div>JobsPage missing</div>} />
+        <Route path="/jobs/new-service" element={CreateJobService? <CreateJobService session={session} /> : <Navigate to="/jobs" />} />
+        <Route path="/jobs/new-job" element={CreateJobPost? <CreateJobPost session={session} /> : <Navigate to="/jobs" />} />
+        <Route path="/jobs/service/:serviceId" element={JobServiceDetail? <JobServiceDetail session={session} /> : <div>Missing</div>} />
+        <Route path="/jobs/post/:jobId" element={JobDetail? <JobDetail session={session} /> : <div>Missing</div>} />
+        <Route path="/stores" element={StoresPage? <StoresPage /> : <div>StoresPage missing</div>} />
+        <Route path="/stores/new" element={CreateStore? <CreateStore session={session} /> : <Navigate to="/stores" />} />
+        <Route path="/stores/:storeId" element={StoreDetail? <StoreDetail /> : <div>Missing</div>} />
+        <Route path="/stores/:storeId/add-product" element={CreateStoreProduct? <CreateStoreProduct session={session} /> : <Navigate to="/stores" />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/signup" element={<AuthPage />} />
+        <Route path="/admin/verifications" element={AdminPage? <AdminPage /> : <div>Admin missing</div>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   )
 }
-
 export default App

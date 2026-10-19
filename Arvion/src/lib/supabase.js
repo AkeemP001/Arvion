@@ -1,16 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const supabaseUrl = 'https://yylxyfjymeengsuzzdur.supabase.co'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5bHh5Zmp5bWVlbmdzdXp6ZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NjAzMjcsImV4cCI6MjEwMTMzNjMyN30.m8Al-8lYievVG4P3mBfN6yjxEo2vWhXN1ZDHauUAGMM'
 
-export const isSupabaseConfigured = () => Boolean(supabaseUrl && supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+})
 
-export const supabase = isSupabaseConfigured()
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : null
+export function isSupabaseConfigured() {
+  return true
+}

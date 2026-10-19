@@ -50,18 +50,33 @@
 }
 
 .market-nav a {
-  padding: 9px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  height: 38px;
+  padding: 0 16px;
   border-radius: 999px;
+  box-sizing: border-box;
   color: #66758a;
+  background: transparent;
+  border: 1px solid transparent;
   font-size: 0.88rem;
   font-weight: 650;
   text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
-.market-nav a:hover,
+.market-nav a:hover {
+  color: #0a1832;
+  background: #f1f5f9;
+}
+
 .market-nav a.active {
-  color: #2149a2;
-  background: #edf3ff;
+  color: #fff;
+  background: #0a1832;
+  border-color: #0a1832;
 }
 
 .market-sell-button,
@@ -146,10 +161,6 @@
   background: white;
 }
 
-.market-hero-sell:first-letter {
-  font-size: 1.15rem;
-}
-
 .market-search-section {
   display: grid;
   gap: 9px;
@@ -188,10 +199,6 @@
 
 .market-search input::placeholder {
   color: #99a5b5;
-}
-
-.market-search input:focus-visible {
-  outline: none;
 }
 
 .market-search button {
@@ -282,11 +289,6 @@
   font-weight: 650;
 }
 
-.market-sort-label span {
-  color: #244da3;
-  font-size: 1rem;
-}
-
 .market-listing-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -305,8 +307,7 @@
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.market-listing-card:hover,
-.market-listing-card:focus-visible {
+.market-listing-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 15px 28px rgba(20, 37, 62, 0.1);
 }
@@ -324,14 +325,7 @@
   display: grid;
   place-items: center;
   color: #95a4b8;
-  background:
-    radial-gradient(circle at 50% 30%, #fff 0%, transparent 52%),
-    #edf2f8;
-}
-
-.market-image-placeholder span,
-.market-detail-placeholder span {
-  font-size: 2.2rem;
+  background: #edf2f8;
 }
 
 .market-listing-copy {
@@ -371,7 +365,6 @@
 .market-listing-price {
   color: #173d91;
   font-size: 1.08rem;
-  letter-spacing: -0.025em;
 }
 
 .market-listing-location {
@@ -409,7 +402,6 @@
   margin: 9px 0 5px;
   color: #1a2d49;
   font-size: 1.45rem;
-  letter-spacing: -0.04em;
 }
 
 .market-empty p {
@@ -446,7 +438,6 @@
   color: #9f2d24;
   background: #fff5f4;
   font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 .market-detail-main {
@@ -460,11 +451,6 @@
   font-size: 0.87rem;
   font-weight: 650;
   text-decoration: none;
-}
-
-.market-back-link:hover,
-.market-cancel-link:hover {
-  color: #173d91;
 }
 
 .market-detail {
@@ -498,16 +484,10 @@
   aspect-ratio: 1.25;
 }
 
-.market-detail-copy {
-  padding: 10px 3px;
-}
-
 .market-detail-copy h1 {
   margin: 14px 0 11px;
   color: #172a45;
   font-size: clamp(1.8rem, 3vw, 2.65rem);
-  letter-spacing: -0.055em;
-  line-height: 1.12;
 }
 
 .market-detail-price {
@@ -538,7 +518,6 @@
 .market-detail-facts strong {
   color: #263a57;
   font-size: 0.88rem;
-  font-weight: 650;
   text-align: right;
 }
 
@@ -553,7 +532,6 @@
   color: #63738a;
   line-height: 1.7;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .market-seller-note {
@@ -590,18 +568,9 @@
 }
 
 .market-form-section h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin: 0;
   color: #1a2d49;
   font-size: 1.07rem;
-}
-
-.market-form-section h2 span {
-  color: #8190a4;
-  font-size: 0.72rem;
-  font-weight: 600;
 }
 
 .market-field-grid {
@@ -627,41 +596,17 @@
 .market-field textarea,
 .market-field select {
   width: 100%;
-  min-width: 0;
   min-height: 48px;
   padding: 11px 13px;
   border: 1px solid #dce3ed;
   border-radius: 11px;
-  outline: none;
   color: #1c304c;
   background: #fcfdff;
   font-size: 0.94rem;
-  font-weight: 450;
 }
 
 .market-field textarea {
   resize: vertical;
-}
-
-.market-field input:focus,
-.market-field textarea:focus,
-.market-field select:focus {
-  border-color: #7896cf;
-  box-shadow: 0 0 0 3px rgba(49, 92, 169, 0.1);
-}
-
-.market-field small {
-  color: #8290a2;
-  font-size: 0.76rem;
-  font-weight: 450;
-  line-height: 1.5;
-}
-
-.market-file-count,
-.market-seller-security {
-  margin: -8px 0 0;
-  color: #718096;
-  font-size: 0.82rem;
 }
 
 .market-form-actions {
@@ -687,19 +632,9 @@
   text-decoration: none;
 }
 
-.market-seller-security {
-  margin: -6px 0 0;
-}
-
 @media (max-width: 1020px) {
   .market-listing-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .market-detail {
-    grid-template-columns: minmax(0, 1fr) minmax(290px, 0.9fr);
-    gap: 26px;
-    padding: 18px;
   }
 }
 
@@ -709,185 +644,33 @@
     min-height: 68px;
     gap: 12px;
   }
-
-  .market-brand span {
-    display: none;
-  }
-
-  .market-nav {
-    gap: 0;
-  }
-
+  .market-brand span { display: none; }
+  .market-nav { gap: 4px; }
   .market-nav a {
-    padding: 8px 10px;
-    font-size: 0.8rem;
+    min-width: 72px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 0.78rem;
   }
-
   .market-sell-button {
     min-height: 40px;
     padding: 0 12px;
     font-size: 0.78rem;
-    white-space: nowrap;
   }
-
   .market-main {
     width: min(100% - 32px, 600px);
     padding-top: 30px;
   }
-
-  .market-hero {
-    align-items: start;
-  }
-
-  .market-hero p {
-    font-size: 0.93rem;
-  }
-
-  .market-hero-sell {
-    min-height: 42px;
-    padding: 0 12px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-  }
-
-  .market-search-section {
-    margin: 7px 0 34px;
-  }
-
   .market-listing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
-
-  .market-listing-copy {
-    gap: 7px;
-    padding: 12px;
-  }
-
-  .market-listing-copy h3 {
-    font-size: 0.88rem;
-  }
-
-  .market-listing-price {
-    font-size: 0.98rem;
-  }
-
-  .market-listing-image,
-  .market-image-placeholder {
-    aspect-ratio: 1.1;
-  }
-
   .market-detail {
     grid-template-columns: 1fr;
-  }
-
-  .market-detail-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .market-detail-copy {
-    padding: 0 2px 5px;
   }
 }
 
 @media (max-width: 480px) {
-  .market-header-inner {
-    width: calc(100% - 24px);
-    gap: 5px;
-  }
-
-  .market-brand img {
-    width: 31px;
-    height: 31px;
-  }
-
-  .market-nav a {
-    padding: 8px;
-    font-size: 0.75rem;
-  }
-
-  .market-sell-button {
-    min-height: 38px;
-    padding: 0 9px;
-    font-size: 0.72rem;
-  }
-
-  .market-main {
-    width: calc(100% - 28px);
-    padding-top: 24px;
-  }
-
-  .market-hero {
-    flex-direction: column;
-    gap: 15px;
-    padding-bottom: 22px;
-  }
-
-  .market-hero h1,
-  .market-form-intro h1 {
-    font-size: 2.45rem;
-  }
-
-  .market-hero-sell {
-    min-height: 40px;
-  }
-
-  .market-search {
-    min-height: 56px;
-    gap: 9px;
-    padding: 0 12px;
-    border-radius: 14px;
-  }
-
-  .market-search input {
-    font-size: 0.9rem;
-  }
-
-  .market-results-heading {
-    align-items: start;
-  }
-
-  .market-sort-label {
-    font-size: 0.7rem;
-    white-space: nowrap;
-  }
-
-  .market-listing-grid {
-    gap: 9px;
-  }
-
-  .market-listing-copy {
-    padding: 10px;
-  }
-
-  .market-listing-meta span {
-    font-size: 0.6rem;
-  }
-
-  .market-listing-location {
-    font-size: 0.7rem;
-  }
-
-  .market-form-section {
-    gap: 14px;
-    padding: 17px 14px;
-  }
-
-  .market-field-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .market-empty {
-    padding: 42px 17px;
-  }
-
-  .market-detail {
-    gap: 20px;
-    padding: 13px;
-  }
-
-  .market-detail-facts div {
-    gap: 10px;
-  }
+  .market-header-inner { width: calc(100% - 24px); }
+  .market-nav a { min-width: 64px; padding: 0 8px; font-size: 0.72rem; }
 }
